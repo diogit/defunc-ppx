@@ -1,0 +1,4 @@
+(executable
+ (name test)
+ (preprocess 
+  (pps defunc_ppx)))

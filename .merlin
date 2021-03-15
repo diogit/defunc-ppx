@@ -1,0 +1,3 @@
+B /Users/diogo/.opam/learn-ocaml/lib/ocaml/compiler-libs
+S /Users/diogo/.opam/learn-ocaml/lib/ocaml/compiler-libs
+FLG -safe-string -w +a-4-42-44-45-48-3 -safe-string -w +a-4-42-44-45-48-3 -w -17 -safe-string -w +a-4-42-44-45-48-3 -safe-string -w +a-4-42-44-45-48-3 -safe-string -w +a-4-42-44-45-48-3 

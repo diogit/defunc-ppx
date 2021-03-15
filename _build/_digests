@@ -1,0 +1,5 @@
+"Rule: ocaml dependencies ml (%=defunc_ppx )": "s\217LY\143\230*\146\242\157.r\205\165#Z"
+"Rule: ocaml: cmx* & o* -> native (%=defunc_ppx )": "\132\139\026\182a\217\152H\252\131-\001yK\145\129"
+"Rule: ocaml: ml -> cmo & cmi (%=defunc_ppx )": "\177\144\245bO(\227\240\127\226\161@\204j\176\191"
+"Resource: /Users/diogo/MIEI-FCT/5\194\186Ano/2\194\186 Semestre/Elaborac\204\167a\204\131o Dissertac\204\167a\204\131o/PPX/Defunc/defunc_ppx.ml": "\152VXe\176\206\230\178\236s\230\153\187\230\140S"
+"Rule: ocaml: ml & cmi -> cmx & o (%=defunc_ppx )": "\155\186\254\245\147\191\144\219>\150\204%\2138\239\n"

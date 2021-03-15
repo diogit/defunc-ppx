@@ -1,0 +1,5 @@
+EXCLUDE_QUERY_DIR
+B ../_build/default/test/.test.eobjs/byte
+S .
+FLG -ppx ''\''/Users/diogo/MIEI-FCT/5ºAno/2º Semestre/Elaboração Dissertação/PPX/Defunc/_build/default/.ppx/78aca856533a9e2d272b15e4962cc780/ppx.exe'\'' --as-ppx'
+FLG -w -40
