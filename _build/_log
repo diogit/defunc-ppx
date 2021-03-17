@@ -2,74 +2,84 @@
 # Target: defunc_ppx.ml.depends, tags: { extension:ml, file:defunc_ppx.ml, ocaml, ocamldep, quiet }
 /Users/diogo/.opam/4.05.0/bin/ocamldep.opt -modules defunc_ppx.ml > defunc_ppx.ml.depends
 + /Users/diogo/.opam/4.05.0/bin/ocamldep.opt -modules defunc_ppx.ml > defunc_ppx.ml.depends
-File "defunc_ppx.ml", line 95, characters 8-11:
+File "defunc_ppx.ml", line 98, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 103, characters 6-9:
+File "defunc_ppx.ml", line 106, characters 6-9:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 110, characters 8-11:
+File "defunc_ppx.ml", line 113, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 132, characters 16-19:
+File "defunc_ppx.ml", line 133, characters 16-19:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 152, characters 4-7:
+File "defunc_ppx.ml", line 151, characters 4-7:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 279, characters 2-5:
+File "defunc_ppx.ml", line 278, characters 2-5:
 Warning 1: this is the start of a comment.
 # Target: defunc_ppx.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:defunc_ppx.cmo, file:defunc_ppx.ml, implem, ocaml, quiet }
 /Users/diogo/.opam/4.05.0/bin/ocamlc.opt -c -I /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs -o defunc_ppx.cmo defunc_ppx.ml
 + /Users/diogo/.opam/4.05.0/bin/ocamlc.opt -c -I /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs -o defunc_ppx.cmo defunc_ppx.ml
-File "defunc_ppx.ml", line 95, characters 8-11:
+File "defunc_ppx.ml", line 98, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 103, characters 6-9:
+File "defunc_ppx.ml", line 106, characters 6-9:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 110, characters 8-11:
+File "defunc_ppx.ml", line 113, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 132, characters 16-19:
+File "defunc_ppx.ml", line 133, characters 16-19:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 152, characters 4-7:
+File "defunc_ppx.ml", line 151, characters 4-7:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 279, characters 2-5:
+File "defunc_ppx.ml", line 278, characters 2-5:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 308, characters 1-105:
+File "defunc_ppx.ml", line 35, characters 2-53:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Pexp_unreachable|Pexp_constant _|Pexp_function _|Pexp_tuple _|
 Pexp_variant (_, _)|Pexp_record (_, _)|Pexp_array _|Pexp_override _)
-File "defunc_ppx.ml", line 336, characters 2-46:
+File "defunc_ppx.ml", line 307, characters 1-105:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Pexp_unreachable|Pexp_constant _|Pexp_function _|Pexp_tuple _|
+Pexp_variant (_, _)|Pexp_record (_, _)|Pexp_array _|Pexp_override _)
+File "defunc_ppx.ml", line 335, characters 2-46:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 []
-File "defunc_ppx.ml", line 433, characters 28-32:
-Warning 10: this expression should have type unit.
-File "defunc_ppx.ml", line 86, characters 12-15:
+File "defunc_ppx.ml", line 91, characters 12-15:
 Warning 26: unused variable key.
+File "defunc_ppx.ml", line 380, characters 8-9:
+Warning 26: unused variable t.
 # Target: defunc_ppx.cmx, tags: { compile, extension:cmx, extension:ml, file:defunc_ppx.cmx, file:defunc_ppx.ml, implem, native, ocaml, quiet }
 /Users/diogo/.opam/4.05.0/bin/ocamlopt.opt -c -I /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs -o defunc_ppx.cmx defunc_ppx.ml
 + /Users/diogo/.opam/4.05.0/bin/ocamlopt.opt -c -I /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs -o defunc_ppx.cmx defunc_ppx.ml
-File "defunc_ppx.ml", line 95, characters 8-11:
+File "defunc_ppx.ml", line 98, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 103, characters 6-9:
+File "defunc_ppx.ml", line 106, characters 6-9:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 110, characters 8-11:
+File "defunc_ppx.ml", line 113, characters 8-11:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 132, characters 16-19:
+File "defunc_ppx.ml", line 133, characters 16-19:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 152, characters 4-7:
+File "defunc_ppx.ml", line 151, characters 4-7:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 279, characters 2-5:
+File "defunc_ppx.ml", line 278, characters 2-5:
 Warning 1: this is the start of a comment.
-File "defunc_ppx.ml", line 308, characters 1-105:
+File "defunc_ppx.ml", line 35, characters 2-53:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 (Pexp_unreachable|Pexp_constant _|Pexp_function _|Pexp_tuple _|
 Pexp_variant (_, _)|Pexp_record (_, _)|Pexp_array _|Pexp_override _)
-File "defunc_ppx.ml", line 336, characters 2-46:
+File "defunc_ppx.ml", line 307, characters 1-105:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(Pexp_unreachable|Pexp_constant _|Pexp_function _|Pexp_tuple _|
+Pexp_variant (_, _)|Pexp_record (_, _)|Pexp_array _|Pexp_override _)
+File "defunc_ppx.ml", line 335, characters 2-46:
 Warning 8: this pattern-matching is not exhaustive.
 Here is an example of a case that is not matched:
 []
-File "defunc_ppx.ml", line 433, characters 28-32:
-Warning 10: this expression should have type unit.
-File "defunc_ppx.ml", line 86, characters 12-15:
+File "defunc_ppx.ml", line 91, characters 12-15:
 Warning 26: unused variable key.
+File "defunc_ppx.ml", line 380, characters 8-9:
+Warning 26: unused variable t.
 # Target: defunc_ppx.native, tags: { dont_link_with, extension:native, file:defunc_ppx.native, link, native, ocaml, program, quiet }
 /Users/diogo/.opam/4.05.0/bin/ocamlopt.opt -I /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs /Users/diogo/.opam/4.05.0/lib/ocaml/compiler-libs/ocamlcommon.cmxa defunc_ppx.cmx -o defunc_ppx.native
 # Compilation successful.

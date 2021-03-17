@@ -18,9 +18,10 @@ let print_queue q =
   let print q =
       Queue.iter (fun e -> print_string (e^", ")) q
   in print_string "(";print q;print_string ") "
+let free_vars_old = Hashtbl.create 16
 let free_vars = Hashtbl.create 16
-let free_vars2 = Hashtbl.create 16
 let vars = Hashtbl.create 16
+let attr_bodies = Hashtbl.create 16
 let attributes = Queue.create ()
 let current_attribute = Stack.create ()
 let seen_funcs = Hashtbl.create 16
@@ -30,6 +31,9 @@ let get_attribute attributes =
   | [] -> ""
   | (a, _)::_ -> a.txt
 
+let getBody pexp_desc =
+  match pexp_desc with
+  | Pexp_fun (_, _, _, e) -> e
 let get_expression_desc expr =
   match expr with
   | {
@@ -39,7 +43,8 @@ let get_expression_desc expr =
     } -> let attr = get_attribute pexp_attributes in
          (if String.length attr > 0
          then (Stack.push attr current_attribute;
-              Queue.add attr attributes));
+              Queue.add attr attributes;
+              Hashtbl.add attr_bodies attr (getBody expression_desc)));
          expression_desc
 
 let get_expression_desc_attribute expr =
@@ -59,7 +64,7 @@ let get_pattern_desc patt =
     } -> pattern_desc
 
 let add_var k v =
-  (Hashtbl.add free_vars k v;
+  (Hashtbl.add free_vars_old k v;
   print_string ("Just added: ("^k^", "^v^"), to the hashtbl.\n");
   try print_string ("Current attribute: "^Stack.top current_attribute^"\n")
   with | Stack.Empty -> ())
@@ -86,11 +91,9 @@ let rec free_variables exp =
         let key = Stack.top current_attribute in
         Stack.iter (fun key -> add_var (key^var) var) current_attribute;
         Stack.iter (fun key ->
-          try let v1 = Hashtbl.find free_vars2 key in
-            (* Hashtbl.remove free_vars2 key;
-            Hashtbl.add free_vars2 key (v1@[var]) *)
-            Hashtbl.replace free_vars2 key (v1@[var])
-          with | Not_found -> Hashtbl.add free_vars2 key [var])
+          try let v1 = Hashtbl.find free_vars key in
+            Hashtbl.replace free_vars key (v1@[var])
+          with | Not_found -> Hashtbl.add free_vars key [var])
           current_attribute;
         (*)
         add_var (key^var) var
@@ -102,21 +105,19 @@ let rec free_variables exp =
       Hashtbl.iter print_hashtbl seen_funcs;
       (*)
       print_string "Current Hashtbl: ";
-      Hashtbl.iter print_hashtbl free_vars; *)
+      Hashtbl.iter print_hashtbl free_vars_old; *)
       print_string "\n";
     | Pexp_fun (_, _, {ppat_desc = Ppat_var {txt = var; _}; _}, {pexp_desc = e; _}) ->
       free_variables e;
       (try
         (*)
-        Hashtbl.remove free_vars (key^var);
+        Hashtbl.remove free_vars_old (key^var);
         *)
-        Stack.iter (fun key -> Hashtbl.remove free_vars (key^var)) current_attribute;
+        (* Stack.iter (fun key -> Hashtbl.remove free_vars_old (key^var)) current_attribute; *)
         Stack.iter (fun key ->
-          try let v1 = Hashtbl.find free_vars2 key in
-            (* Hashtbl.remove free_vars2 key;
-            Hashtbl.add free_vars2 key (List.rev (List.tl (List.rev v1))) *)
-            Hashtbl.replace free_vars2 key (List.rev (List.tl (List.rev v1)))
-          with | Not_found -> Hashtbl.add free_vars2 key [var])
+          try let v1 = Hashtbl.find free_vars key in
+            Hashtbl.replace free_vars key (List.rev (List.tl (List.rev v1)))
+          with | Not_found -> Hashtbl.add free_vars key [var])
           current_attribute;
         let key = Stack.pop current_attribute in
         print_string ("Just removed: ("^key^", "^var^"), from the hashtbl.\n");
@@ -130,15 +131,13 @@ let rec free_variables exp =
       free_variables e;
       (try
                 (*)
-        Hashtbl.remove free_vars (key^var);
+        Hashtbl.remove free_vars_old (key^var);
         *)
-        Stack.iter (fun key -> Hashtbl.remove free_vars (key^var)) current_attribute;
+        (* Stack.iter (fun key -> Hashtbl.remove free_vars_old (key^var)) current_attribute; *)
         Stack.iter (fun key ->
-          try let v1 = Hashtbl.find free_vars2 key in
-            (* Hashtbl.remove free_vars2 key;
-            Hashtbl.add free_vars2 key (List.rev (List.tl (List.rev v1))) *)
-            Hashtbl.replace free_vars2 key (List.rev (List.tl (List.rev v1)))
-          with | Not_found -> Hashtbl.add free_vars2 key [var])
+          try let v1 = Hashtbl.find free_vars key in
+            Hashtbl.replace free_vars key (List.rev (List.tl (List.rev v1)))
+          with | Not_found -> Hashtbl.add free_vars key [var])
           current_attribute;
         let key = Stack.pop current_attribute in
         print_string ("Just removed: ("^key^", "^var^"), from the hashtbl.\n");
@@ -376,16 +375,18 @@ let rec case_match_vars vars_tuple =
 
 let rec e4 s =
   try
-    let e = Stack.pop s in
-    let vars = snd e in
-    Exp.case (Pat.construct {txt = Lident (fst e); loc=(!default_loc)}
+    let attr_vars = Stack.pop s in
+    let vars = snd attr_vars in
+    let t = Hashtbl.find attr_bodies (fst attr_vars) in
+    Exp.case (Pat.construct {txt = Lident (fst attr_vars); loc=(!default_loc)}
       (if List.length vars > 0
       then Some (Pat.tuple (case_match_vars vars))
       else None))
       (Exp.let_
         Nonrecursive
         [Vb.mk (Pat.var {txt = "x"; loc=(!default_loc)}) (Exp.ident {txt = Lident "arg"; loc=(!default_loc)})]
-        (Exp.ident {txt = Lident "x"; loc=(!default_loc)}))
+        (* (Exp.ident {txt = Lident "x"; loc=(!default_loc)})) *)
+        (Hashtbl.find attr_bodies (fst attr_vars)))
     :: e4 s
   with | Stack.Empty -> []
 
@@ -397,20 +398,29 @@ and apply (k: kont) arg =
   | K2 (k, hl) -> let hr = arg in apply k (1 + max hl hr)
    *)
 
-let e3 =
+let e3 v =
+
   let write = Stack.create () in
-  Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars2;
-  print_string ("\nfree_vars2 length: "^string_of_int (Hashtbl.length free_vars2)^"\n");
+  Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
   Exp.match_ (Exp.ident {txt = Lident "k"; loc=(!default_loc)}) (e4 write)
 
-let e2 = Exp.fun_ Nolabel None (Pat.var {txt = "arg"; loc=(!default_loc)}) e3
+let e2 v = 
 
-let e1 = Exp.fun_ Nolabel None (Pat.constraint_ (Pat.var {txt = "k"; loc=(!default_loc)}) (Typ.mk (Ptyp_constr ({txt = Lident "kont"; loc=(!default_loc)}, [])))) e2
+Exp.fun_ Nolabel None (Pat.var {txt = "arg"; loc=(!default_loc)}) (e3 v)
 
-let apply = Vb.mk (Pat.var {txt = "apply"; loc=(!default_loc)}) e1
+let e1 v = 
 
+Exp.fun_ Nolabel None (Pat.constraint_ (Pat.var {txt = "k"; loc=(!default_loc)}) (Typ.mk (Ptyp_constr ({txt = Lident "kont"; loc=(!default_loc)}, [])))) (e2 v)
+
+let apply v = 
+
+Vb.mk (Pat.var {txt = "apply"; loc=(!default_loc)}) (e1 v)
+
+(*  free vars becomes empty hre?? *)
 let rec transform_defunc rec_flag vb_list =
-  Str.value rec_flag [apply]
+let v = Hashtbl.copy free_vars in
+(* print_string ("\nfree_vars length: "^string_of_int (Hashtbl.length free_vars)^"\n"); *)
+  Str.value rec_flag [apply v]
 
 let rec str_item_defunc_mapper mapper str = 
    begin match str with
@@ -421,16 +431,14 @@ let rec str_item_defunc_mapper mapper str =
             | PStr [{ pstr_desc =
                     Pstr_value (rec_flag,
                     l); _}] ->
-                      let act1 = List.iter free_vars_value_binding l in
-                      let act2 =
+                      (* List.iter free_vars_value_binding l;
                       let write = Stack.create () in
-                        Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars2;
+                        Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
                         Str.type_ Recursive [
                           Type.mk {txt = "kont"; loc=(!default_loc)}
                           ~kind:(Ptype_variant (build_type write))]
-                      in
-                      let act3 = transform_defunc rec_flag l in
-                      act1; act2; act3
+                          ; *)
+                      transform_defunc rec_flag l
             | PStr [{ pstr_desc =
                     Pstr_eval ({pexp_desc =
                       Pexp_let (rec_flag, l, exp); _}, _) ; _}] -> Str.value rec_flag l
@@ -440,15 +448,40 @@ let rec str_item_defunc_mapper mapper str =
       | x -> default_mapper.structure_item mapper x;
       end
 
+let rec str_defunc_mapper mapper str_list = 
+  let res = List.fold_left (fun acc str ->
+  (* testar se o str tem o extension defun *)
+  begin match str with
+  | {pstr_desc = Pstr_extension (({ txt = "defun"; loc }, pstr), _attributes); _} ->
+      begin 
+      match pstr with
+      | PStr [{ pstr_desc =
+              Pstr_value (rec_flag,
+              l); _}] ->
+                List.iter free_vars_value_binding l;
+                let write = Stack.create () in
+                  Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
+                  let t = Str.type_ Recursive [
+                    Type.mk {txt = "kont"; loc=(!default_loc)}
+                    ~kind:(Ptype_variant (build_type write))]
+                  in
+                  let exp = str_item_defunc_mapper mapper str in
+                  exp::t::acc
+      | _ -> (str_item_defunc_mapper mapper str)::acc                   
+    end
+  | x -> (default_mapper.structure_item mapper x)::acc;
+  end) [] str_list in
+    List.rev res
+
 let rec str_item_print_mapper mapper str = 
    begin match str with
       | { pstr_desc =
           Pstr_extension (({ txt = "print"; _ }, _), _); _} ->
           print_string "%print found \n";
-          print_string "Free vars: ";
-          Hashtbl.iter print_hashtbl free_vars;
+          (* print_string "Free vars: "; *)
+          (* Hashtbl.iter print_hashtbl free_vars_old; *)
           print_string "\nFree vars2: ";
-          Hashtbl.iter print_hashtbl2 free_vars2;
+          Hashtbl.iter print_hashtbl2 free_vars;
           print_string "\nVars: ";
           Hashtbl.iter print_hashtbl vars;
           print_string "\nAttributes: ";
@@ -458,11 +491,11 @@ let rec str_item_print_mapper mapper str =
             (* [
               Type.constructor {txt = k1; loc=(!default_loc)};
               Type.constructor {txt = k2; loc=(!default_loc)}
-              ~args:(Pcstr_tuple [Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars "K1r")); loc=(!default_loc)}, []));
-                                  Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars "K1k")); loc=(!default_loc)}, []))]);
+              ~args:(Pcstr_tuple [Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars_old "K1r")); loc=(!default_loc)}, []));
+                                  Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars_old "K1k")); loc=(!default_loc)}, []))]);
               Type.constructor {txt = k3; loc=(!default_loc)}
-              ~args:(Pcstr_tuple [Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars "K2k")); loc=(!default_loc)}, []));
-                                  Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars "K2hl")); loc=(!default_loc)}, []))])
+              ~args:(Pcstr_tuple [Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars_old "K2k")); loc=(!default_loc)}, []));
+                                  Typ.mk (Ptyp_constr ({txt = Lident (Hashtbl.find vars (Hashtbl.find free_vars_old "K2hl")); loc=(!default_loc)}, []))])
             ] *)
       (* Delegate to the default mapper. *)
       | x -> default_mapper.structure_item mapper x;
@@ -471,6 +504,7 @@ let rec str_item_print_mapper mapper str =
 let defunc_mapper _argv =
   { 
     default_mapper with
+    structure = str_defunc_mapper;
     structure_item = str_item_defunc_mapper
   }
 

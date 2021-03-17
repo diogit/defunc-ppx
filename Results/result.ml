@@ -1,5 +1,3 @@
-
-free_vars2 length: 0
 Pexp_ident t
 Seen functions: (t; t) 
 Just added: (K0x, x), to the hashtbl.
@@ -52,5 +50,15 @@ Empty Stack ( , t)
 type t =
   | E 
   | N of t * t 
-let rec apply (k : kont) arg = match k with 
+type kont =
+  | K0 
+  | K1 of t * kont 
+  | K2 of kont * int 
+let rec apply (k : kont) arg =
+  match k with
+  | K0  -> let x = arg  in x
+  | K1 (r,k) ->
+      let x = arg  in
+      h_cps r ((fun (hr : int)  -> k (1 + (max hl hr)))[@K2 ])
+  | K2 (k,hl) -> let x = arg  in k (1 + (max hl hr)) 
 [%%print let x = () ]
