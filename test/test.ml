@@ -10,7 +10,7 @@ and h_cps (t: t) (k: int -> 'a) =
     h_cps l (fun [@K1] (hl: int) -> (* FV: K1 |-> { r: t; k: int -> 'a } *)
     h_cps r (fun [@K2] (hr: int) -> (* FV: K2 |-> { k: int -> 'a; hl: int } *)
             k (1 + max hl hr)))
-            
-let %print x = ()
+
+
 
   
