@@ -1,1 +1,1 @@
-defunc_ppx.ml: Ast_helper Ast_mapper Asttypes Exp Format Hashtbl List Location Longident Parsetree Pat Queue Stack Str String Typ Type Vb
+defunc_ppx.ml: Ast_helper Ast_mapper Asttypes Exp Hashtbl List Location Longident Parsetree Pat Queue Stack Str String Typ Type Vb

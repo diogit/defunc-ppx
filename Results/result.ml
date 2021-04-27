@@ -16,4 +16,3 @@ and apply k arg =
   | K1 (r,k) -> let hl = arg  in h_cps r (K2 (k, hl))
   | K2 (k,hl) -> let hr = arg  in apply k (1 + (max hl hr))
 
-[%%print let x = () ]

@@ -4,6 +4,7 @@ open Asttypes
 open Parsetree
 open Longident
 
+(* Debug Functions *)
 let print_hashtbl k v = print_string ("("^k^"; "^v^") ")
 
 let print_hashtbl_list k v =
@@ -19,24 +20,25 @@ let print_queue q =
       Queue.iter (fun e -> print_string (e^", ")) q
   in print_string "(";print q;print_string ") "
 
-(* Hashtbl to save attributes and free variables - (attribute, [variable]) *)
+(* Global Variables *)
+(* Hashtbl to store attributes and free variables - (attribute, [variable]) *)
 let free_vars = Hashtbl.create 16
-(* Hashtbl to save free variables and types - (variable, type) *)
+(* Hashtbl to store free variables and types - (variable, type) *)
 let vars = Hashtbl.create 16
-(* Hashtbl to save attributes and function bodies - (attribute, function body) *)
+(* Hashtbl to store attributes and function bodies - (attribute, function body) *)
 let attr_bodies = Hashtbl.create 16
-(* Hashtbl to save attributes and function args - (attribute, function arg) *)
+(* Hashtbl to store attributes and function args - (attribute, function arg) *)
 let attr_args = Hashtbl.create 16
-(* Queue to save attributes *)
+(* Queue to store attributes *)
 let attributes = Queue.create ()
-(* Stack to current attributes *)
+(* Stack to store current attributes *)
 let current_attributes = Stack.create ()
 
+(* Auxiliary functions *)
 let get_attribute attributes =
   match attributes with
   | [] -> ""
   | (a, _)::_ -> a.txt
-
 let getBody pexp_desc =
   match pexp_desc with
   | Pexp_fun (_, _, _, e) -> e
@@ -56,14 +58,11 @@ let get_expression_desc expr =
               Hashtbl.add attr_bodies attr (getBody expression_desc);
               Hashtbl.add attr_args attr (getArg expression_desc)));
          expression_desc
-
-let get_expression_desc_attribute expr =
-  match expr with
-  | {
-    pexp_desc = _;
-    pexp_loc = _;
-    pexp_attributes = attributes;
-    } -> get_attribute attributes
+(* Applies a function to the value of an option *)
+let f_option f opt =
+  match opt with
+  | None -> None
+  | Some o -> Some (f o)
 
 let get_pattern_desc patt =
   match patt with
@@ -73,17 +72,11 @@ let get_pattern_desc patt =
   	ppat_attributes = _;
     } -> pattern_desc
 
-let add_var k v =
-  (
-  print_string ("Just added: ("^k^", "^v^"), to the hashtbl.\n");
-  try print_string ("Current attribute: "^Stack.top current_attributes^"\n")
-  with | Stack.Empty -> ())
-
 let rec get_type core_type_desc =
 match core_type_desc with
 |	Ptyp_any -> ""
 |	Ptyp_var var -> var
-|	Ptyp_arrow (arg_label, {ptyp_desc = core_type_desc1; _}, {ptyp_desc = core_type_desc2; _}) -> (get_type core_type_desc1)^" -> "^(get_type core_type_desc2)
+|	Ptyp_arrow (_, {ptyp_desc = core_type_desc1; _}, {ptyp_desc = core_type_desc2; _}) -> (get_type core_type_desc1)^" -> "^(get_type core_type_desc2)
 |	Ptyp_tuple core_type_list -> ""
 |	Ptyp_constr (loc, core_type_list) -> Longident.last loc.txt
 |	Ptyp_object (_, closed_flag) -> ""
@@ -98,18 +91,12 @@ let rec free_variables exp =
   match exp with
     | Pexp_ident {txt = Lident var; _} ->
       (try
-        (* Stack.iter (fun key -> add_var (key^var) var) current_attributes; *)
         Stack.iter (fun key ->
           try let v1 = Hashtbl.find free_vars key in
             Hashtbl.replace free_vars key (v1@[var])
           with | Not_found -> Hashtbl.add free_vars key [var])
           current_attributes;
       with | Stack.Empty -> ());
-      (* print_string ("Pexp_ident "^var^"\n"); *)
-      (* Hashtbl.add seen_funcs var var; *)
-      (* print_string "Seen functions: "; *)
-      (* Hashtbl.iter print_hashtbl seen_funcs; *)
-      (* print_string "\n"; *)
     | Pexp_fun (_, _, {ppat_desc = Ppat_var {txt = var; _}; _}, {pexp_desc = e; _}) ->
       free_variables e;
       (try
@@ -119,12 +106,7 @@ let rec free_variables exp =
           with | Not_found -> Hashtbl.add free_vars key [var])
           current_attributes;
         ignore(Stack.pop current_attributes)
-        (* let key = 
-         in () *)
       with | Stack.Empty -> ())
-      (* print_string ("Empty Stack ( , "^var^")\n")); *)
-        (* print_string ("Just removed: ("^key^", "^var^"), from the hashtbl.\n"); *)
-        (* print_string ("Pexp_fun + Ppat_var, removed: "^(Stack.top current_attributes)^"\n") *)
     | Pexp_fun (_, _, {ppat_desc = Ppat_constraint ({ppat_desc = Ppat_var {txt = var; _}; _},
       {ptyp_desc = core_type_desc; _}); _},
       {pexp_desc = e; _}) ->
@@ -138,12 +120,7 @@ let rec free_variables exp =
           with | Not_found -> Hashtbl.add free_vars key [var])
           current_attributes;
         ignore(Stack.pop current_attributes)
-        (* let key = 
-        in *)
-        (* print_string ("Just removed: ("^key^", "^var^"), from the hashtbl.\n"); *)
-        (* print_string ("Pexp_fun + Ppat_constraint, removed: "^(Stack.top current_attributes)^"\n") *)
       with | Stack.Empty -> ())
-      (* print_string ("Empty Stack ( , "^var^")\n")); *)
     |	Pexp_constant _ -> ()
     |	Pexp_let (_, value_binding_list , expression) ->
       List.iter free_vars_value_binding value_binding_list;
@@ -289,64 +266,6 @@ and free_vars_payload payload =
   |	PTyp core_type -> ()
   |	PPat (pattern, expression_option) -> ()
 
-let print_attributes attributes =
-if List.length attributes > 0 then
-match List.hd attributes with
-| (a, _) -> 
-if List.length attributes > 0 then (Format.printf "attribute found: %s;" a.txt)
-else (Format.printf "%s;" "no attributes found")
-else (Format.printf "%s;" "no attributes found")
-
-let get_fun_expression expression_desc =
- match expression_desc with
- | Pexp_fun (arg_label, expression_option, pattern, expression) -> expression
-let get_fun_expression_desc expr =
-  match expr with
-  | {
-    pexp_desc = expression_desc;
-    pexp_loc = location;
-    pexp_attributes = attributes;
-    } -> expression_desc
-
-let get_attributes expr =
-  match expr with
-  | {
-    pexp_desc = expression_desc;
-    pexp_loc = location;
-    pexp_attributes = attributes;
-    } -> attributes
-
-let get_value_binding_expression value_binding =
-  match value_binding with
-  | {
-    pvb_pat = pattern;
-    pvb_expr = expression;
-    pvb_attributes = attributes;
-    pvb_loc = location;
-    } -> expression
-
-let rec iterate_value_binding_list value_binding_list  =
-  match value_binding_list with
-  | x::xs -> x 
-
-let get_value_binding structure_item_desc =
-  match structure_item_desc with
-  | Pstr_eval (expression , attributes) -> []
-  | Pstr_value (rec_flag , value_binding_list) -> value_binding_list
-  | Pstr_primitive value_description -> []
-  | Pstr_type (rec_flag , type_declaration_list) -> []
-  | Pstr_typext type_extension -> []
-  | Pstr_exception type_exception -> []
-  | Pstr_module module_binding -> []
-  | Pstr_recmodule module_binding_list -> []
-  | Pstr_modtype module_type_declaration -> []
-  | Pstr_open open_declaration -> []
-  | Pstr_class class_declaration_list -> []
-  | Pstr_class_type class_type_declaration_list -> []
-  | Pstr_include include_declaration -> []
-  | Pstr_attribute attribute -> []
-  | Pstr_extension (extension , attributes) -> []
-
 let rec build_type_aux vars_list =
   match vars_list with
   | [] -> [] 
@@ -363,19 +282,13 @@ let rec build_type s =
   with | Stack.Empty -> []
 
 (* Defunc starts here *)
-let f_option f opt =
-  match opt with
-  | None -> None
-  | Some o -> Some (f o)
-
 let rec write_tuple var_list =
   match var_list with
   | [] -> []
   | x::xs -> Exp.ident ({txt = Lident x; loc=(!default_loc)}) :: write_tuple xs
 
+(* Write the Apply function *)
 let write_new_body v =
-  (* print_string ("Queue length: "^string_of_int (Queue.length attributes)^"\n");
-  Exp.construct ~attrs:[] {txt = Lident "attr"; loc=(!default_loc)} None *)
   let attr = Queue.take attributes in
   let free_vars = Hashtbl.find free_vars attr in
   Exp.construct ~attrs:[] {txt = Lident attr; loc=(!default_loc)}
@@ -390,10 +303,6 @@ let rec defunc_expression_desc expression_desc =
     |	Pexp_let (rec_flag, value_binding_list, expression) -> Pexp_let (rec_flag, (List.map defunc_vb value_binding_list), defunc_expression expression)
     |	Pexp_function case_list -> Pexp_function (List.map defunc_case case_list)
     | Pexp_fun (arg_label, expression_option, pattern, expression) ->
-      (* print_string "Pexp_fun\n";
-      (match pattern with
-      |{ppat_desc = Ppat_constraint _} -> print_string "Ppat_constraint\n"
-      | _ -> ()); *)
       Pexp_fun (arg_label, expression_option, defunc_pattern pattern, defunc_expression expression)
     |	Pexp_apply ({pexp_desc = Pexp_ident {txt = Lident var; _}; _}, arg_label_expression_list) ->
       if var = "k"
@@ -479,7 +388,7 @@ and defunc_pattern_desc pattern_desc =
   |	Ppat_array pattern_list -> Ppat_array (List.map defunc_pattern pattern_list)
   |	Ppat_or (pattern1, pattern2) -> Ppat_or (defunc_pattern pattern1, defunc_pattern pattern2)
   (* |	Ppat_constraint (pattern, core_type) -> Ppat_constraint (defunc_pattern pattern, defunc_core_type core_type) *)
-  |	Ppat_constraint (pattern, core_type) -> 
+  |	Ppat_constraint (pattern, _) -> 
     (* print_string "I was here \n"; *)
     get_pattern_desc (defunc_pattern pattern)
   |	Ppat_type t -> Ppat_type t
@@ -557,7 +466,7 @@ and defunc_module_expression_desc module_expr_desc =
   |	Pmod_constraint (module_expr, module_type) -> Pmod_constraint (module_expr, module_type)
   |	Pmod_unpack expression -> Pmod_unpack (defunc_expression expression)
   |	Pmod_extension extension -> Pmod_extension extension
-(* Defunc ends here *)
+
 let rec case_match_vars vars_tuple =
   match vars_tuple with
   | [] -> []
@@ -574,22 +483,8 @@ let rec e4 s =
       (if List.length vars > 0
       then Some (Pat.tuple (case_match_vars vars))
       else None))
-      (Exp.let_
-        Nonrecursive
-        [Vb.mk (arg) (Exp.ident {txt = Lident "arg"; loc=(!default_loc)})]
-        (* [Vb.mk (Pat.var {txt = "x"; loc=(!default_loc)}) (Exp.ident {txt = Lident "arg"; loc=(!default_loc)})] *)
-        (* (Exp.ident {txt = Lident "x"; loc=(!default_loc)})) *)
-        (Hashtbl.find attr_bodies attr))
-    :: e4 s
+      (Exp.let_ Nonrecursive [Vb.mk (arg) (Exp.ident {txt = Lident "arg"; loc=(!default_loc)})] body) :: e4 s
   with | Stack.Empty -> []
-
-(*
-and apply (k: kont) arg =
-  match k with
-  | K0 -> let x = arg in x
-  | K1 (r, k) -> let hl = arg in h_cps r (K2 (k, hl)) (* inlining do corpo do fun *)
-  | K2 (k, hl) -> let hr = arg in apply k (1 + max hl hr)
-   *)
 
 let e3 v =
   let write = Stack.create () in
@@ -602,15 +497,11 @@ Exp.fun_ Nolabel None (Pat.var {txt = "arg"; loc=(!default_loc)}) (e3 v)
 let e1 v = 
 Exp.fun_ Nolabel None (Pat.constraint_ (Pat.var {txt = "k"; loc=(!default_loc)}) (Typ.mk (Ptyp_constr ({txt = Lident "kont"; loc=(!default_loc)}, [])))) (e2 v)
 
-let apply v = 
-
-Vb.mk (Pat.var {txt = "apply"; loc=(!default_loc)}) (e1 v)
+let apply v = Vb.mk (Pat.var {txt = "apply"; loc=(!default_loc)}) (e1 v)
 
 (*  free vars becomes empty here?? *)
 let rec transform_defunc rec_flag vb_list =
-let v = Hashtbl.copy free_vars in
-(* print_string ("\nfree_vars length: "^string_of_int (Hashtbl.length free_vars)^"\n"); *)
-  (* Str.value rec_flag ((List.map defunc_vb vb_list)@[(apply None)]) *)
+(* let v = Hashtbl.copy free_vars in *)
   Str.value rec_flag (List.map defunc_vb (vb_list@[apply None]))
 
 let rec str_item_defunc_mapper mapper str = 
@@ -621,18 +512,7 @@ let rec str_item_defunc_mapper mapper str =
             match pstr with
             | PStr [{ pstr_desc =
                     Pstr_value (rec_flag,
-                    l); _}] ->
-                      (* List.iter free_vars_value_binding l;
-                      let write = Stack.create () in
-                        Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
-                        Str.type_ Recursive [
-                          Type.mk {txt = "kont"; loc=(!default_loc)}
-                          ~kind:(Ptype_variant (build_type write))]
-                          ; *)
-                      transform_defunc rec_flag l
-            | PStr [{ pstr_desc =
-                    Pstr_eval ({pexp_desc =
-                      Pexp_let (rec_flag, l, exp); _}, _) ; _}] -> Str.value rec_flag l
+                    l); _}] -> transform_defunc rec_flag l
             | _ -> raise (Location.Error (Location.error ~loc "Syntax error in expression mapper"))                       
           end
       (* Delegate to the default mapper. *)
@@ -649,15 +529,18 @@ let rec str_defunc_mapper mapper str_list =
       | PStr [{ pstr_desc =
               Pstr_value (rec_flag,
               l); _}] ->
+                (* Gather free variables *)
                 List.iter free_vars_value_binding l;
+                (* Write continuation type *)
                 let write = Stack.create () in
-                  Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
-                  let t = Str.type_ Recursive [
-                    Type.mk {txt = "kont"; loc=(!default_loc)}
-                    ~kind:(Ptype_variant (build_type write))]
-                  in
-                  let exp = str_item_defunc_mapper mapper str in
-                  exp::t::acc
+                Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
+                let t = Str.type_ Recursive [
+                  Type.mk {txt = "kont"; loc=(!default_loc)}
+                  ~kind:(Ptype_variant (build_type write))]
+                in
+                (* Write defunctionalized function *)
+                let exp = str_item_defunc_mapper mapper str in
+                exp::t::acc
       | _ -> (str_item_defunc_mapper mapper str)::acc                   
     end
   | x -> (default_mapper.structure_item mapper x)::acc;
