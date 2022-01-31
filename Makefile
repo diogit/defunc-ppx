@@ -9,7 +9,7 @@ clean = rm -r -f _build *.native $(RESULT)* $(DUMP).ml
 native = ocamlbuild -package compiler-libs.common  $(NATIVE).native 
 build = ocamlfind ppx_tools/rewriter ./$(NATIVE).native  $(FILE).ml > $(RESULT).ml
 dump = ocamlfind ppx_tools/dumpast -loc_discard $(FILE).ml > $(DUMP).ml
-exec = ocamlc -o $(RESULT) $(RESULT).ml  && ./$(RESULT)
+exec = ocamlopt -o $(RESULT) unix.cmxa $(RESULT).ml  && ./$(RESULT)
 show = cat $(RESULT).ml
 
 all:

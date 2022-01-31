@@ -466,7 +466,7 @@ and defunc_module_expression_desc module_expr_desc =
   |	Pmod_constraint (module_expr, module_type) -> Pmod_constraint (module_expr, module_type)
   |	Pmod_unpack expression -> Pmod_unpack (defunc_expression expression)
   |	Pmod_extension extension -> Pmod_extension extension
-(* Defunc ends here *)
+
 let rec case_match_vars vars_tuple =
   match vars_tuple with
   | [] -> []
@@ -513,9 +513,6 @@ let rec str_item_defunc_mapper mapper str =
             | PStr [{ pstr_desc =
                     Pstr_value (rec_flag,
                     l); _}] -> transform_defunc rec_flag l
-            (* | PStr [{ pstr_desc =
-                    Pstr_eval ({pexp_desc =
-                      Pexp_let (rec_flag, l, exp); _}, _) ; _}] -> Str.value rec_flag l *)
             | _ -> raise (Location.Error (Location.error ~loc "Syntax error in expression mapper"))                       
           end
       (* Delegate to the default mapper. *)
@@ -532,15 +529,18 @@ let rec str_defunc_mapper mapper str_list =
       | PStr [{ pstr_desc =
               Pstr_value (rec_flag,
               l); _}] ->
+                (* Gather free variables *)
                 List.iter free_vars_value_binding l;
+                (* Write continuation type *)
                 let write = Stack.create () in
-                  Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
-                  let t = Str.type_ Recursive [
-                    Type.mk {txt = "kont"; loc=(!default_loc)}
-                    ~kind:(Ptype_variant (build_type write))]
-                  in
-                  let exp = str_item_defunc_mapper mapper str in
-                  exp::t::acc
+                Hashtbl.iter (fun k v -> Stack.push (k, v) write) free_vars;
+                let t = Str.type_ Recursive [
+                  Type.mk {txt = "kont"; loc=(!default_loc)}
+                  ~kind:(Ptype_variant (build_type write))]
+                in
+                (* Write defunctionalized function *)
+                let exp = str_item_defunc_mapper mapper str in
+                exp::t::acc
       | _ -> (str_item_defunc_mapper mapper str)::acc                   
     end
   | x -> (default_mapper.structure_item mapper x)::acc;
